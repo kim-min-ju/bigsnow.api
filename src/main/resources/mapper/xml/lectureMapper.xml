@@ -1,0 +1,599 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="lecture">
+
+	<!-- resultMap 소문자 변경 -->
+	<resultMap type="org.apache.commons.collections4.map.CaseInsensitiveMap" id="lowerMap"/>
+
+  
+
+	<sql id="subjectWhere">
+		 
+		where S.USE_YN = 'Y'
+		
+		<if test='sbj_nm != null and sbj_nm != ""'> AND S.sbj_nm like concat('%', #{sbj_nm} , '%' ) </if>		
+		<if test='cust_nm != null and cust_nm != ""'> AND C.cust_nm like concat('%', #{cust_nm} , '%' ) </if>
+		<if test='cust_no != null and cust_no != ""'> AND C.cust_no = #{cust_no} </if>
+		<if test='sbj_grp_cd != null and sbj_grp_cd != ""'> AND S.sbj_grp_cd = #{sbj_grp_cd} </if>
+		
+		
+	</sql>
+	      
+    <!-- 강좌 시작 -->
+ 
+ 
+ 	<select id="subjectSelectBoxList" parameterType="java.util.Map" resultMap="lowerMap">
+	
+		/* lecture.subjectSelectBoxList */
+		
+			select   S.sbj_no
+	               , S.sbj_nm  
+	         
+			from tb_subject S left outer join tb_cust    C on ( S.cust_no = C.CUST_NO )
+	                          left outer join tb_user    U on ( S.REG_USER_NO = U.USER_NO )
+		
+		<include refid="subjectWhere" />
+
+		ORDER BY sbj_nm
+	
+		
+	</select>
+	 
+ 
+	<select id="subjectList" parameterType="java.util.Map" resultMap="lowerMap">
+	
+		/* lecture.subjectList */
+		
+			select   S.*
+	           
+	           , ( SELECT NM from TB_CODE SC where REPR_CD ='SGC' and SC.cd = S.SBJ_GRP_CD ) as SBJ_GRP_NM
+	           , ( SELECT NM from TB_CODE SC where REPR_CD ='CTC' and SC.cd = S.CLASS_TGT_CD ) as CLASS_TGT_NM
+	           , ( SELECT NM from TB_CODE SC where REPR_CD ='PSC' and SC.cd = S.PROG_STATE_CD ) as CLASS_STATE_NM
+	           
+	           , ( SELECT NM from TB_CODE SC where REPR_CD ='SCC' and SC.cd = S.SBJ_CLS_CD ) as SBJ_CLS_NM
+	           
+	           , U.USER_NM as REG_USER_NM
+	           , C.CUST_NM
+	                      
+			from tb_subject S left outer join tb_cust    C on ( S.cust_no = C.CUST_NO )
+	                          left outer join tb_user    U on ( S.REG_USER_NO = U.USER_NO )
+		
+		<include refid="subjectWhere" />
+
+		ORDER BY sbj_no desc
+		
+		<if test=' start_row != null '> limit  #{start_row}, #{end_row}  </if>	
+		
+	</select>
+	 
+
+	<select id="subjectCount" parameterType="java.util.Map" resultType="int">
+	
+		/* lecture.subjectCount */
+		
+		    SELECT  count(*) 
+			from tb_subject S left outer join tb_cust    C on ( S.cust_no = C.CUST_NO )
+	                          left outer join tb_user    U on ( S.REG_USER_NO = U.USER_NO )
+		 
+		<include refid="subjectWhere" /> 
+		
+	</select>
+ 
+
+
+    <select id="subjectDetail"  parameterType="java.lang.String" resultMap="lowerMap">
+      
+         /* lecture.subjectDetail */
+
+			select   S.*
+	           
+	           , ( SELECT NM from TB_CODE SC where REPR_CD ='SGC' and SC.cd = S.SBJ_GRP_CD ) as SBJ_GRP_NM
+	           , ( SELECT NM from TB_CODE SC where REPR_CD ='CTC' and SC.cd = S.CLASS_TGT_CD ) as CLASS_TGT_NM
+	           , ( SELECT NM from TB_CODE SC where REPR_CD ='PSC' and SC.cd = S.PROG_STATE_CD ) as CLASS_STATE_NM
+	           
+	           , ( SELECT NM from TB_CODE SC where REPR_CD ='SCC' and SC.cd = S.SBJ_CLS_CD ) as SBJ_CLS_NM
+	           
+	           , U.USER_NM as REG_USER_NM
+	           , C.CUST_NM
+	           , ( select phy_file_nm from TB_FILE F where F.REF_NM ='TB_SUBJECT' AND  F.REF_PK = S.SBJ_NO AND F.FILE_GBN = 'main_img'  ORDER BY F.FILE_NO DESC LIMIT 0, 1 ) AS IMG_FILE_NM
+	           
+			from tb_subject S left outer join tb_cust    C on ( S.cust_no = C.CUST_NO )
+	                          left outer join tb_user    U on ( S.REG_USER_NO = U.USER_NO )
+	                      
+		    where  sbj_no = #{sbj_no}
+ 
+    </select> 
+
+
+	      
+	<update id="updateSubjectUseYn" parameterType="java.util.Map">
+	 
+		/* lecture.updateSubjectUseYn */
+		
+		UPDATE tb_subject
+		SET		use_yn = 'N'
+		WHERE  sbj_no = #{sbj_no}
+		
+	</update>   	      
+	      
+ 
+ 
+
+	 <insert id="insertSubject"   parameterType="java.util.Map">
+	 	
+	 	/* lecture.insertSubject */
+	 	
+		INSERT INTO tb_subject 
+			(
+			        CUST_NO            
+			      , SBJ_GRP_CD         
+			      , SBJ_NM             
+			      , CLASS_TGT_CD       
+			      , PROG_STATE_CD      
+			                
+			      , SBJ_DSC            
+				  , USE_YN       
+				  , REG_DT     
+				  , SBJ_CLS_CD
+				
+				<if test='reg_user_no != null and reg_user_no != ""'> , REG_USER_NO    </if>		
+				  
+				 
+			) VALUES (
+				    #{cust_no}    
+			      , #{sbj_grp_cd}       
+			      , #{sbj_nm}           
+			      , #{class_tgt_cd}     
+			      , #{prog_state_cd}    
+			      
+			      , #{sbj_dsc}          
+				  , 'Y'       
+				  , DATE_FORMAT(now()	, '%Y%m%d%H%i%s') 
+				
+				  , #{sbj_cls_cd}
+				
+				<if test='reg_user_no != null and reg_user_no != ""'> , #{reg_user_no}     </if>	     
+ 			);
+ 			
+		    <selectKey keyProperty="sbj_no" resultType="int">
+		        SELECT LAST_INSERT_ID()
+		    </selectKey>		 			
+ 					
+	 </insert>
+
+
+	 <update id="updateSubject"   parameterType="java.util.Map">                                 
+	 	                                                                                           
+	 	/* lecture.updateSubject */                                                                
+	 	                                                                                           
+		UPDATE tb_subject
+		SET   CUST_NO           = #{cust_no}                                                                                  
+		      , SBJ_GRP_CD        = #{sbj_grp_cd}                                                                             
+		      , SBJ_NM            = #{sbj_nm}                                                                                 
+		      , CLASS_TGT_CD      = #{class_tgt_cd}                                                                           
+		      , PROG_STATE_CD     = #{prog_state_cd}                                                                          
+		                                                                                                                    
+		      , SBJ_DSC           = #{sbj_dsc}                                                                                
+		      
+		      , SBJ_CLS_CD        = #{sbj_cls_cd}
+			  
+			  <if test='upd_user_no != null and upd_user_no != ""'> , UPD_USER_NO  = #{upd_user_no}     </if>	
+			  , UPD_DT	        = DATE_FORMAT(now()	, '%Y%m%d%H%i%s') 				                                                                                       
+        
+          WHERE sbj_no = #{sbj_no}                                                                  
+                                                                               
+	 </update>       
+ 
+        <!-- 강좌 개설 시작 -->
+ 
+  	<sql id="lectureWhere">
+		 
+		where L.USE_YN = 'Y'
+		AND   S.USE_YN = 'Y'
+		
+		<if test='sbj_nm != null and sbj_nm != ""'> AND S.sbj_nm like concat('%', #{sbj_nm} , '%' ) </if>		
+		<if test='cust_nm != null and cust_nm != ""'> AND C.cust_nm like concat('%', #{cust_nm} , '%' ) </if>
+		<if test='cust_no != null and cust_no != ""'> AND C.cust_no = #{cust_no} </if>
+		<if test='prog_state_cd != null and prog_state_cd != ""'> AND L.PROG_STATE_CD = #{prog_state_cd} </if>
+		
+	</sql>
+ 
+  
+	<select id="lectureList" parameterType="java.util.Map" resultMap="lowerMap">
+	
+		/* lecture.lectureList */
+		
+		select   L.LEC_NO
+	           , C.CUST_NM
+		       , S.SBJ_NM
+		       , S.SBJ_NO
+			   , S.SBJ_NM as LEC_NM 
+               , L.LEC_YEAR
+	           
+	           , CONCAT_WS( ','
+	                     , case when L.LEC_MON_YN = 'Y' then '월' end
+	                     , case when L.LEC_TUE_YN = 'Y' then '화' end 
+	                     , case when L.LEC_WED_YN = 'Y' then '수' end 
+	                     , case when L.LEC_THU_YN = 'Y' then '목' end 
+	                     , case when L.LEC_FRI_YN = 'Y' then '금' end 
+	                     , case when L.LEC_SAT_YN = 'Y' then '토' end 
+	                     , case when L.LEC_SUN_YN = 'Y' then '일' end 
+	                     
+	                   ) as LEC_WEEK_NM 
+	           , L.LEC_FR_TM        
+	           , L.LEC_TO_TM
+	           , L.PROG_ROUND
+	           , L.LEC_INWON
+	           , U.USER_NM as TEACHER_NM
+	           , ( SELECT NM from TB_CODE SC where REPR_CD ='CTC' and SC.cd = S.CLASS_TGT_CD ) as CLASS_TGT_NM
+	           , ( SELECT NM from TB_CODE SC where REPR_CD ='PSC' and SC.cd = L.PROG_STATE_CD ) as CLASS_STATE_NM
+	           
+	           , ( SELECT NM from TB_CODE SC where REPR_CD ='SCC' and SC.cd = S.SBJ_CLS_CD ) as SBJ_CLS_NM
+	           
+	           , ( SELECT NM from TB_CODE SC where REPR_CD ='SGC' and SC.cd = S.SBJ_GRP_CD ) as SBJ_GRP_NM
+	           
+	           , L.REG_DT
+	           , L.LEC_DEGREE
+	           
+	           , L.LEC_FR_DT
+               , L.LEC_TO_DT
+       
+               , case when DATE_FORMAT(now()	, '%Y%m%d') between  L.LEC_FR_DT and  L.LEC_TO_DT then '강의중'
+                      when DATE_FORMAT(now()	, '%Y%m%d')  <![CDATA[ >  ]]>  L.LEC_TO_DT                        then '강의완료'
+                      else '수강등록'
+                 end as ING_NM     	           
+	           
+	           
+			from tb_lecture L left outer join tb_subject S on ( L.SBJ_NO = S.SBJ_NO )
+	                      left outer join tb_cust    C on ( S.cust_no = C.CUST_NO )
+	                      left outer join tb_user    U on ( L.TEACHER_NO = U.USER_NO )
+ 
+		
+		<include refid="lectureWhere" />
+
+		ORDER BY lec_no desc
+		
+		<if test=' start_row != null '> limit  #{start_row}, #{end_row}  </if>	
+		
+	</select>
+	 
+
+
+	      
+	      
+ <select id="lectureNameSearch"  parameterType="java.lang.String" resultMap="lowerMap">
+      
+         /* lecture.lectureNameSearch */
+
+		  select  max(L.LEC_NO) as lec_no
+                   ,count(L.LEC_NO) as cnt
+		  from tb_lecture L inner join tb_subject S on ( L.SBJ_NO = S.SBJ_NO )
+	      where L.USE_YN        = 'Y'
+	      and   S.USE_YN        = 'Y'
+	      AND   L.PROG_STATE_CD = 'PSC001'
+	      AND   S.CUST_NO       =  #{cust_no}
+	      AND   S.SBJ_NM like concat('%',  #{lec_nm} , '%')
+ 
+    </select> 	      
+	      
+
+	<select id="lectureCount" parameterType="java.util.Map" resultType="int">
+	
+		/* lecture.lectureCount */
+		
+		    SELECT  count(*) 
+			from tb_lecture L left outer join tb_subject S on ( L.SBJ_NO = S.SBJ_NO )
+	                      left outer join tb_cust    C on ( S.cust_no = C.CUST_NO )
+	                      left outer join tb_user    U on ( L.TEACHER_NO = U.USER_NO )
+ 
+		 
+		<include refid="lectureWhere" /> 
+		
+	</select>
+	 
+
+    <select id="lectureDetail"  parameterType="java.lang.String" resultMap="lowerMap">
+      
+         /* lecture.lectureDetail */
+
+			select   L.*
+		           , C.CUST_NM
+				   , S.SBJ_NM 
+		           , S.SBJ_NM as LEC_NM
+		           , ( SELECT NM from TB_CODE SC where REPR_CD ='SGC' and SC.cd = S.SBJ_GRP_CD ) as SBJ_GRP_NM
+		         
+		           
+		           , CONCAT_WS( ','
+		                     , case when L.LEC_MON_YN = 'Y' then '월' end
+		                     , case when L.LEC_TUE_YN = 'Y' then '화' end 
+		                     , case when L.LEC_WED_YN = 'Y' then '수' end 
+		                     , case when L.LEC_THU_YN = 'Y' then '목' end 
+		                     , case when L.LEC_FRI_YN = 'Y' then '금' end 
+		                     , case when L.LEC_SAT_YN = 'Y' then '토' end 
+		                     , case when L.LEC_SUN_YN = 'Y' then '일' end 
+		                     
+		                   ) as LEC_WEEK_NM 
+		           , U.USER_NM as TEACHER_NM
+		           , ( SELECT NM from TB_CODE SC where REPR_CD ='CTC' and SC.cd = S.CLASS_TGT_CD ) as CLASS_TGT_NM
+		           , ( SELECT NM from TB_CODE SC where REPR_CD ='PSC' and SC.cd = S.PROG_STATE_CD ) as CLASS_STATE_NM
+		           
+		           , ( SELECT NM from TB_CODE SC where REPR_CD ='SCC' and SC.cd = S.SBJ_CLS_CD ) as SBJ_CLS_NM
+		           
+	               , ( SELECT phy_file_nm from tb_file SF where SF.REF_PK = 'TB_LECTURE' AND SF.REF_PK = L.LEC_NO ORDER BY SF.FILE_NO DESC LIMIT 0, 1) AS MAIN_IMG
+	               
+	               , ( select  user_nm from tb_user SU where SU.user_no = L.REG_USER_NO) as reg_user_nm
+	               , ( select  user_nm from tb_user SU where SU.user_no = L.UPD_USER_NO) as upd_user_nm
+	               
+			from tb_lecture L left outer join tb_subject S on ( L.SBJ_NO = S.SBJ_NO )
+	                      left outer join tb_cust    C on ( S.cust_no = C.CUST_NO )
+	                      left outer join tb_user    U on ( L.TEACHER_NO = U.USER_NO )
+	                      
+		    where  lec_no = #{lec_no}
+ 
+    </select> 
+    
+    
+	<update id="updateLectureUseYn" parameterType="java.util.Map">
+	 
+		/* lecture.updateUseYn */
+		
+		UPDATE tb_lecture
+		SET		use_yn = 'N'
+		WHERE  lec_no = #{lec_no}
+		
+	</update>    
+    
+
+	 <insert id="insertLecture"   parameterType="java.util.Map">
+	 	
+	 	/* lecture.insertLecture */
+	 	
+		INSERT INTO tb_lecture 
+			(
+			     LEC_NM
+				, SBJ_NO
+				
+				<if test='teacher_no != null and teacher_no != ""'> , TEACHER_NO    </if>
+				
+				, CAPA_NUM     
+				, LEC_YEAR     
+				, LEC_DEGREE   
+				, PROG_STATE_CD
+				, LEC_FR_DT    
+				, LEC_TO_DT    
+				, LEC_MON_YN   
+				, LEC_TUE_YN   
+				, LEC_WED_YN   
+				, LEC_THU_YN   
+				, LEC_FRI_YN   
+				, LEC_SAT_YN   
+				, LEC_SUN_YN   
+				, LEC_FR_TM    
+				, LEC_TO_TM    
+				, LEC_DSC      
+				, MATERIALS    
+				, LEC_ROOM     
+				
+				<if test='fee != null and fee != ""'> , FEE    </if>				
+				
+				, USE_YN       
+				, REG_DT     
+				
+				<if test='reg_user_no != null and reg_user_no != ""'> , REG_USER_NO    </if>		
+				  
+				<if test='tot_round != null and tot_round != ""'> , TOT_ROUND    </if>
+				
+				 
+			) VALUES (
+				  #{lec_nm}   
+				, #{sbj_no}
+				 
+				<if test='teacher_no != null and teacher_no != ""'> , #{teacher_no}    </if>				
+				   
+				, #{capa_num}     
+				, #{lec_year}     
+				, #{lec_degree}   
+				, #{prog_state_cd}
+				, #{lec_fr_dt}    
+				, #{lec_to_dt}    
+				, #{lec_mon_yn}   
+				, #{lec_tue_yn}   
+				, #{lec_wed_yn}   
+				, #{lec_thu_yn}   
+				, #{lec_fri_yn}   
+				, #{lec_sat_yn}   
+				, #{lec_sun_yn}   
+				, replace(#{lec_fr_tm}, ':', '')    
+				, replace(#{lec_to_tm}, ':', '')    
+				, #{lec_dsc}      
+				, #{materials}    
+				, #{lec_room}     
+ 
+ 				<if test='fee != null and fee != ""'> , #{fee}    </if>
+ 
+				, 'Y'       
+				, DATE_FORMAT(now()	, '%Y%m%d%H%i%s') 
+				
+				<if test='reg_user_no != null and reg_user_no != ""'> , #{reg_user_no}     </if>	     
+				
+				<if test='tot_round != null and tot_round != ""'> , #{tot_round}   </if>
+
+			)
+		 <selectKey  resultType="int" keyProperty="returnKey" order="AFTER">
+			 SELECT LAST_INSERT_ID()
+		 </selectKey>
+	 </insert>
+
+
+	 <update id="updateLecture"   parameterType="java.util.Map">                                 
+	 	                                                                                           
+	 	/* lecture.updateLecture */                                                                
+	 	                                                                                           
+		UPDATE tb_lecture
+		SET   LEC_NM            = #{lec_nm}                                                                            
+				, CAPA_NUM          = #{capa_num}                                                                          
+				, LEC_YEAR          = #{lec_year}                                                                          
+				, LEC_DEGREE        = #{lec_degree}                                                                        
+				, PROG_STATE_CD     = #{prog_state_cd}                                                                     
+				, LEC_FR_DT         = #{lec_fr_dt}                                                                         
+				, LEC_TO_DT         = #{lec_to_dt}                                                                         
+				, LEC_MON_YN        = #{lec_mon_yn}                                                                        
+				, LEC_TUE_YN        = #{lec_tue_yn}                                                                        
+				, LEC_WED_YN        = #{lec_wed_yn}                                                                        
+				, LEC_THU_YN        = #{lec_thu_yn}                                                                        
+				, LEC_FRI_YN        = #{lec_fri_yn}                                                                        
+				, LEC_SAT_YN        = #{lec_sat_yn}                                                                        
+				, LEC_SUN_YN        = #{lec_sun_yn}                                                                        
+				, LEC_FR_TM         = replace(#{lec_fr_tm}, ':', '')                                                                         
+				, LEC_TO_TM         = replace(#{lec_to_tm}, ':', '')                                                                         
+				, LEC_DSC           = #{lec_dsc}                                                                           
+				, MATERIALS         = #{materials}                                                                         
+				, LEC_ROOM          = #{lec_room}                                                                          
+				
+				<if test='sbj_no != null and sbj_no != ""'> , SBJ_NO = #{sbj_no}      </if>               
+				<if test='teacher_no != null and teacher_no != ""'> , TEACHER_NO   = #{teacher_no}    </if>   
+ 			                                                                                       
+ 			    <if test='fee != null and fee != ""'> , FEE  = #{fee}     </if>				                           
+				<if test='upd_user_no != null and upd_user_no != ""'> , UPD_USER_NO  = #{upd_user_no}     </if>	
+				
+				<if test='tot_round != null and tot_round != ""'> , TOT_ROUND = #{tot_round}   </if>
+				
+				, UPD_DT	        = DATE_FORMAT(now()	, '%Y%m%d%H%i%s') 				                                                                                       
+        
+          WHERE lec_no = #{lec_no}                                                                  
+                                                                               
+	 </update>       
+
+
+
+	 <update id="updateLectureInwonCount"   parameterType="java.util.Map">                                 
+	 	                                                                                           
+	 	   /* lecture.updateLectureInwonCount */                                                                
+	 	                                                                                           
+		  UPDATE tb_lecture
+		  SET   LEC_INWON   = ( select count(*) from  TB_LECTUREAPP where use_yn = 'Y' and lec_no      = #{lec_no}  )                                                                            
+          WHERE lec_no      = #{lec_no}                                                                  
+                                                                               
+	 </update>       
+
+
+    <select id="lectureUserList"  parameterType="java.lang.String" resultMap="lowerMap">
+      
+         /* lecture.lectureUserList */
+
+			
+			select   S.SBJ_NM as LEC_NM
+			       , L.LEC_YEAR
+			       , L.LEC_DEGREE
+			       , L.LEC_FR_DT
+			       , L.LEC_TO_DT
+			       , A.ATT_NUM
+			       , A.ABSENT_NUM
+			       , S.SBJ_NM
+			       , ( SELECT NM from TB_CODE SC where REPR_CD ='SGC' and SC.cd = S.SBJ_GRP_CD ) as SBJ_GRP_NM
+			       , ( SELECT NM from TB_CODE SC where REPR_CD ='PSC' and SC.cd = S.PROG_STATE_CD ) as CLASS_STATE_NM
+			       , ( SELECT NM from TB_CODE SC where REPR_CD ='SCC' and SC.cd = S.SBJ_CLS_CD ) as SBJ_CLS_NM
+			       
+			from  tb_lectureapp A left outer join tb_lecture L on ( A.LEC_NO = L.LEC_NO )
+			                      left outer join TB_SUBJECT S on ( L.SBJ_NO = S.SBJ_NO )
+			where L.USE_YN  = 'Y'
+			and   A.use_yn = 'Y'
+			and   A.STD_USER_NO   = #{std_user_no}
+			order by  L.LEC_FR_DT desc
+
+    </select> 
+
+
+    <select id="lectureUserAppList"  parameterType="java.lang.String" resultMap="lowerMap">
+      
+         /* lecture.lectureUserAppList */
+
+			select   S.SBJ_NM as LEC_NM
+			       , L.LEC_YEAR
+			       , L.LEC_DEGREE
+			       , E.LES_DT
+			       , E.LES_FR_TM
+			       , E.LES_TO_TM
+			       , U.USER_NM AS TEACHER_NM			       
+			       , A.ATT_NUM
+			       , A.ABSENT_NUM
+             
+            , CASE DAYOFWEEK(E.LES_DT)
+                  WHEN '1' THEN '일'
+                  WHEN '2' THEN '월'
+                  WHEN '3' THEN '화'
+                  WHEN '4' THEN '수'
+                  WHEN '5' THEN '목'
+                  WHEN '6' THEN '금'
+                  WHEN '7' THEN '토'
+              END AS week_nm
+             
+			       , ( SELECT NM from TB_CODE SC where REPR_CD ='SGC' and SC.cd = S.SBJ_GRP_CD ) as SBJ_GRP_NM
+			       , ( SELECT NM from TB_CODE SC where REPR_CD ='PSC' and SC.cd = S.PROG_STATE_CD ) as CLASS_STATE_NM
+			       , ( SELECT NM from TB_CODE SC where REPR_CD ='SCC' and SC.cd = S.SBJ_CLS_CD ) as SBJ_CLS_NM
+			       
+             , U.USER_NM as teacher_nm
+			from  TB_ATTENDANCE T left outer join tb_lectureapp A ON ( T.LEC_APP_NO = A.LEC_APP_NO )
+			                      left outer join tb_lecture L on ( A.LEC_NO = L.LEC_NO )
+			                      left outer join TB_SUBJECT S on ( L.SBJ_NO = S.SBJ_NO )
+                            left outer join TB_LESSON E on ( T.LES_NO = E.LES_NO )
+                            left outer join TB_USER    U on ( E.TEACHER_NO = U.user_id )
+
+			                      
+			where L.USE_YN  = 'Y'
+			and   A.use_yn = 'Y'
+ 
+ 
+			and   A.STD_USER_NO   = #{std_user_no}
+			order by  L.LEC_FR_DT desc;
+ 
+
+    </select> 
+
+
+
+
+    <select id="lectureTeacherScheduleList"  parameterType="java.lang.String" resultMap="lowerMap">
+      
+         /* lecture.lectureTeacherScheduleList */
+
+			select   L.*
+		           
+		           , ( SELECT NM from TB_CODE SC where REPR_CD ='SGC' and SC.cd = S.SBJ_GRP_CD ) as SBJ_GRP_NM
+		           , ( SELECT NM from TB_CODE SC where REPR_CD ='CTC' and SC.cd = S.CLASS_TGT_CD ) as CLASS_TGT_NM
+		           , ( SELECT NM from TB_CODE SC where REPR_CD ='PSC' and SC.cd = S.PROG_STATE_CD ) as CLASS_STATE_NM
+		           , ( SELECT NM from TB_CODE SC where REPR_CD ='SCC' and SC.cd = S.SBJ_CLS_CD ) as SBJ_CLS_NM
+		           , U.USER_NM as REG_USER_NM
+	         
+			 from tb_subject S inner        join TB_LECTURE L on (S.SBJ_NO = L.SBJ_NO )
+                               left   outer join tb_cust    C on ( S.cust_no = C.CUST_NO )
+	                           left   outer join tb_user    U on ( L.TEACHER_NO = U.USER_NO )
+		      where S.USE_YN = 'Y'
+		      and   C.USE_YN = 'Y'
+		      and   U.USE_YN = 'Y'
+		      
+		      and   L.TEACHER_NO = #{user_no}
+		      
+		      order by LEC_FR_DT desc , LEC_FR_TM desc
+
+     </select>
+
+
+  
+  
+    <select id="SubjectDupChk"  parameterType="java.util.Map" resultMap="lowerMap">
+
+           /* lecture.SubjectDupChk */
+
+			select A.*
+			from tb_subject A 
+			
+			WHERE CUST_NO      = #{cust_no}
+			AND   SBJ_NM       = #{sbj_nm}
+			AND   CLASS_TGT_CD = #{class_tgt_cd}
+			AND   USE_YN   = 'Y'
+                      
+     </select>     
+
+
+</mapper>

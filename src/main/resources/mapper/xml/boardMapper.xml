@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="board">
+
+	<!-- resultMap 소문자 변경 -->
+	<resultMap type="org.apache.commons.collections4.map.CaseInsensitiveMap" id="lowerMap"/>
+
+	<sql id="boardWhere">
+		 
+		where B.BRD_KIND = #{brd_kind}
+		and   B.USE_YN = 'Y'		
+		
+		<if test='ttl != null and ttl != ""'> AND B.ttl like concat('%', #{ttl} , '%' ) </if>
+		<if test='reg_fr_dt != null and reg_fr_dt != ""'> AND B.reg_dt <![CDATA[ >= ]]> concat(#{reg_fr_dt}, '000000') </if>
+		<if test='reg_to_dt != null and reg_to_dt != ""'> AND B.reg_dt <![CDATA[ <= ]]>  concat(#{reg_to_dt}, '235959') </if>
+		
+	</sql>
+	
+	<select id="boardList" parameterType="java.util.Map" resultMap="lowerMap">
+	
+		   /* board.boardList */
+
+			select  B.*
+			      , U.user_nm  as reg_user_nm
+			from tb_board B left outer join tb_user U on ( B.reg_user_no = U.user_no)
+		
+		    <include refid="boardWhere" />
+
+			order by ifnull(B.top_notice_yn, 'N') desc, B.top_reg_no desc, all_reg_no asc
+		
+		    <if test=' start_row != null '> limit  #{start_row}, #{end_row}  </if>	
+		
+	</select>
+	 
+	<select id="mainBoardList" parameterType="java.util.Map" resultMap="lowerMap">
+	
+		   /* board.mainBoardList */
+
+			select  B.*
+			      , U.user_nm  as reg_user_nm
+			from tb_board B left outer join tb_user U on ( B.reg_user_no = U.user_no)
+		
+		    <include refid="boardWhere" />
+
+			order by ifnull(B.top_notice_yn, 'N') desc, B.top_reg_no desc, all_reg_no asc
+		
+		    limit  0, 5	
+		
+	</select>	 	 
+	 
+
+	<select id="boardCount" parameterType="java.util.Map" resultType="int">
+	
+		/* board.boardCount */
+		
+		    SELECT  count(*) 
+			from tb_board B left outer join tb_user U on ( B.reg_user_no = U.user_no)
+		 
+		    <include refid="boardWhere" /> 
+		
+	</select>
+ 
+
+
+    <select id="boardDetail"  parameterType="java.lang.String" resultMap="lowerMap">
+      
+         /* board.boardDetail */
+
+			select  B.*
+			      , U.user_nm  as reg_user_nm  
+			from tb_board B left outer join tb_user U on ( B.reg_user_no = U.user_no)
+		    where  brd_reg_no = #{brd_reg_no}
+ 
+    </select> 
+
+ 
+ 
+	      
+	<update id="updateBoardUseYn" parameterType="java.util.Map">
+	 
+		/* board.updateBoardUseYn */
+		
+		UPDATE  tb_board
+		SET		use_yn = 'N'
+		WHERE   brd_reg_no = #{brd_reg_no}
+		
+	</update>   	      
+	      
+
+	 <insert id="insertBoard"   parameterType="java.util.Map">
+	 	
+	 	/* board.insertBoard */
+	 	
+		INSERT INTO tb_board
+			(
+				  brd_kind
+				, ttl
+				, ctnt
+				, view_cnt
+				, use_yn
+				, reg_dt
+				, top_notice_yn   
+				
+				<if test='reg_user_no != null and reg_user_no != ""'> , REG_USER_NO    </if>		
+				  
+				 
+			) VALUES (
+			
+				  upper(#{brd_kind})
+				, #{ttl}
+				, #{ctnt}
+				, 0
+				, #{use_yn}
+				, DATE_FORMAT(now()	, '%Y%m%d%H%i%s')
+				, #{top_notice_yn}   
+				
+				<if test='reg_user_no != null and reg_user_no != ""'> , #{reg_user_no}     </if>	     
+				
+			)
+			
+		    <selectKey keyProperty="brd_reg_no" resultType="int">
+		        SELECT LAST_INSERT_ID()
+		    </selectKey>			
+			
+					
+	 </insert>
+
+	 <update id="insertAfterBoardUpdate"   parameterType="java.util.Map">                                 
+	 	                                                                                           
+	 	/* board.insertAfterBoardUpdate */                                                                
+	 	                                                                                           
+		UPDATE tb_board
+		SET       depth       = #{depth}
+				, all_reg_no  = #{all_reg_no}
+				, top_reg_no  = #{top_reg_no}
+ 				                                                                                       
+          WHERE brd_reg_no = #{brd_reg_no}                                                                  
+                                                                               
+	 </update>       
+ 
+ 
+	 <update id="updateBoard"   parameterType="java.util.Map">                                 
+	 	                                                                                           
+	 	/* board.updateBoard */                                                                
+	 	                                                                                           
+		UPDATE tb_board
+		SET       ttl           = #{ttl}
+				, ctnt          = #{ctnt}
+				, use_yn        = #{use_yn}
+				, top_notice_yn = #{top_notice_yn}
+ 				, upd_dt        = DATE_FORMAT(now()	, '%Y%m%d%H%i%s')    
+				<if test='reg_user_no != null and reg_user_no != ""'>, upd_reg_no = #{reg_user_no}     </if>	 				                                                                                   
+          WHERE brd_reg_no = #{brd_reg_no}                                                                  
+                                                                               
+	 </update>       
+   
+
+</mapper>

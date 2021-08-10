@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cust">
+
+	<!-- resultMap 소문자 변경 -->
+	<resultMap type="org.apache.commons.collections4.map.CaseInsensitiveMap" id="lowerMap"/>
+ 
+ 
+ <sql id="custWhere">
+		 
+		where A.use_yn  = 'Y'
+		
+		<if test='cust_nm != null and cust_nm != ""'> AND A.cust_nm like concat('%", #{cust_nm}, '%') </if>		
+		
+	</sql>
+	      
+
+
+	<select id="custCount" parameterType="java.util.Map" resultType="int">
+	
+		/* cust.custCount */
+		
+		SELECT  count(*) 
+		FROM  tb_cust A
+		 
+		<include refid="custWhere" />
+		
+	</select>
+ 
+	<select id="custList" parameterType="java.util.Map" resultMap="lowerMap">
+	
+		/* cust.custList */
+		   
+		    
+			select   * 
+			from tb_cust A
+			
+			<include refid="custWhere" />
+			
+			ORDER BY cust_no desc
+			
+			<if test=' start_row != null '> limit  #{start_row}, #{end_row}  </if>	
+		
+	</select>
+ 
+ 
+  
+	<select id="custSelectBoxList" parameterType="java.util.Map" resultMap="lowerMap">
+	
+		/* cust.custSelectBoxList */
+		   
+		    
+			select   * 
+			from tb_cust A
+			
+		    where A.use_yn  = 'Y'
+		
+		   <if test='cust_no != null and cust_no != ""'> 
+		      AND (     A.cust_no     = #{cust_no} 
+		            or  A.up_cust_no  = #{cust_no}
+		          )  
+		    </if>		
+			
+			ORDER BY A.cust_nm , A.cust_no desc 
+				
+		
+	</select>
+ 
+ 
+	<select id="custDetail" parameterType="java.util.Map" resultMap="lowerMap">
+	
+		/* cust.custDetail */
+		
+		select    A.* 
+		from tb_cust A
+		where cust_no = #{cust_no}
+   
+		
+	</select>
+
+	<select id="custNameList" parameterType="java.util.Map" resultMap="lowerMap">
+	
+		/* cust.custNameList */
+		
+		select    A.* 
+		from tb_cust A
+		where upper( replace(cust_nm, ' ', '')) = upper( replace( #{cust_nm} , ' ', '')) 
+		and   use_yn  = 'Y'
+		
+	</select>
+
+
+	<select id="custUserDetail" parameterType="java.util.Map" resultMap="lowerMap">
+	
+		/* cust.custUserDetail */
+		
+		select    A.* 
+		from tb_user A
+		where CUST_NO = #{cust_no}
+		and   use_yn  = 'Y'
+        limit 0, 1
+		
+	</select>
+	
+	
+	<update id="updateCustUseYn" parameterType="java.util.Map">
+	 
+		/* cust.updateCustUseYn */
+		
+		UPDATE tb_cust
+		SET		use_yn = 'N'
+		WHERE  cust_no = #{cust_no}
+		
+	</update>    
+    
+
+	 <insert id="insertCust"   parameterType="java.util.Map">
+	 	
+	 	/* cust.insertCust */
+	 	
+		INSERT INTO tb_cust 
+			(
+			
+					  CUST_NM       
+				<if test='up_cust_no != null and up_cust_no != ""'> , UP_CUST_NO    </if>	  
+					   
+					, TEL_NO        
+					, FAX_NO        
+					, POST_NO       
+					, ADDR          
+					, ADDR_DETAIL   
+					, ETC           
+ 			        , USE_YN       
+				    , REG_DT     
+				
+				 <if test='reg_user_no != null and reg_user_no != ""'> , REG_USER_NO    </if>		
+				 
+			) VALUES (
+				  #{cust_nm}   
+
+				 <if test='up_cust_no != null and up_cust_no != ""'> , #{up_cust_no}    </if>	  
+				
+					, #{tel_no}        
+					, #{fax_no}        
+					, #{post_no}       
+					, #{addr}          
+					, #{addr_detail}
+					, #{etc}   
+
+				, 'Y'       
+				, DATE_FORMAT(now()	, '%Y%m%d%H%i%s') 
+				
+				<if test='reg_user_no != null and reg_user_no != ""'> , #{reg_user_no}     </if>	     
+				
+
+			)		
+	 </insert>
+
+
+	 <update id="updateCust"   parameterType="java.util.Map">                                 
+	 	                                                                                           
+	 	/* cust.updateCust */                                                                
+	 	                                                                                           
+		UPDATE tb_cust
+		SET    CUST_NM          = #{cust_nm}      
+				<if test='up_cust_no != null and up_cust_no != ""'> , UP_CUST_NO    </if>	  
+					   
+					, TEL_NO          = #{tel_no}      
+					, FAX_NO          = #{fax_no}      
+					, POST_NO         = #{post_no}      
+					, ADDR            = #{addr}      
+					, ADDR_DETAIL     = #{addr_detail}      
+					, ETC             = #{etc}      
+		    
+				<if test='upd_user_no != null and upd_user_no != ""'> , UPD_USER_NO  = #{upd_user_no}     </if>	
+				, UPD_DT	        = DATE_FORMAT(now()	, '%Y%m%d%H%i%s') 				                                                                                       
+        
+          WHERE cust_no = #{cust_no}                                                                  
+                                                                               
+	 </update>       
+
+	
+	
+
+</mapper>

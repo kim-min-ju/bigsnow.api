@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="menu">
+
+	<!-- resultMap 소문자 변경 -->
+	<resultMap type="org.apache.commons.collections4.map.CaseInsensitiveMap" id="lowerMap"/>
+
+ 
+	<select id="menuList" parameterType="java.util.Map" resultMap="lowerMap">
+	
+		/* menu.menuList*/
+		
+		SELECT  M.*
+		      
+		FROM tb_menu M 
+		WHERE  M.USE_YN = 'Y'
+		ORDER BY M.MENU_DEPTH, M.SORT_SEQ
+
+		
+	</select>
+
+ 
+	<select id="menuCount" parameterType="java.util.Map" resultType="int">
+	
+		/* menu.menuCount*/
+		
+		SELECT  count(*) 
+		FROM tb_menu M 
+		WHERE  M.USE_YN = 'Y'
+		 
+	</select>
+
+
+	 <select id="menuDetail" parameterType="java.util.Map" resultMap="lowerMap">
+	 	
+	 	/* menu.menuDetail */
+	 	
+		SELECT *
+		FROM tb_menu 
+		WHERE  menu_id = #{menu_id} 		
+	    
+	 </select>
+
+
+	 <insert id="insertMenu"   parameterType="java.util.Map">
+	 	
+	 	/* menu.insertMenu */
+	 	
+		INSERT INTO TB_MENU
+			(
+			      MENU_NM
+				, MENU_DEPTH
+				, MENU_URL
+				
+				<if test='up_menu_id != null and up_menu_id != ""'> , UP_MENU_ID  </if>
+				<if test='sort_seq != null and sort_seq != ""'> , SORT_SEQ  </if>
+				
+				, ETC
+				, URL_ROLE
+				, USE_YN
+				, REG_DT
+				
+				<if test='reg_user_no != null and reg_user_no != ""'> , REG_USER_NO    </if>	
+				
+                
+			) VALUES (
+			      #{menu_nm}
+				, #{menu_depth}
+                , #{menu_url}
+				<if test='up_menu_id != null and up_menu_id != ""'> , #{up_menu_id}  </if>
+				<if test='sort_seq != null and sort_seq != ""'> , #{sort_seq} </if>
+				
+				, #{sort_seq}
+				, #{etc}
+				, #{url_role}
+				, #{use_yn}
+
+				, DATE_FORMAT(now()	, '%Y%m%d%H%i%s') 
+				
+				<if test='reg_user_no != null and reg_user_no != ""'> , #{reg_user_no}     </if>	
+
+			)		
+	 </insert>
+
+
+	 <insert id="updateMenu"   parameterType="java.util.Map">
+	 	
+	 	/* menu.updateMenu */
+	 	
+		UPDATE TB_MENU
+		SET       MENU_NM       = #{menu_nm}
+				, MENU_URL      = #{menu_url}
+				
+
+				<if test='sort_seq != null and sort_seq != ""'> , SORT_SEQ = #{sort_seq} </if>
+				
+				, ETC          = #{etc}
+				, URL_ROLE     = #{url_role}
+				, USE_YN       = #{use_yn}
+				, UPD_DT       = DATE_FORMAT(now()	, '%Y%m%d%H%i%s') 
+				
+				<if test='reg_user_no != null and reg_user_no != ""'> , UPD_USER_NO =  #{reg_user_no}     </if>	
+		 WHERE menu_id = #{menu_id}	  	
+	 </insert>
+
+</mapper>

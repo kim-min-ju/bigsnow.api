@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="code">
+
+	<!-- resultMap 소문자 변경 -->
+	<resultMap type="org.apache.commons.collections4.map.CaseInsensitiveMap" id="lowerMap"/>
+
+
+	<sql id="codeWhere">
+		 
+		where 1 = 1
+		
+		<if test='repr_cd != null and repr_cd != ""'> AND A.repr_cd = #{repr_cd} </if>		
+		
+	</sql>
+	      
+
+
+	<select id="codeCount" parameterType="java.util.Map" resultType="int">
+	
+		/* code.codeCount */
+		
+		SELECT  count(*) 
+		FROM  TB_CODE A
+		 
+		<include refid="codeWhere" />
+		
+	</select>
+ 
+	<select id="codeList" parameterType="java.util.Map" resultMap="lowerMap">
+	
+		/* code.codeList */
+		
+		SELECT  * 
+		FROM  TB_CODE A
+		
+		<include refid="codeWhere" />
+		
+		ORDER BY sort_seq asc, cd
+		
+	</select>
+
+
+	 <insert id="insertCode"   parameterType="java.util.Map">
+	 	
+	 	/* code.insertCode */
+	 	
+		INSERT INTO TB_CODE 
+			(
+			   repr_cd		
+	         , cd
+	         , nm
+	         , dsc
+	         , use_yn
+	         , val1
+	         , sort_seq
+				 
+			) VALUES (
+			   #{repr_cd}		
+	         , #{cd}
+	         , #{nm}
+	         , #{dsc}
+	         , #{use_yn}
+	         , #{val1}
+	         , #{sort_seq}
+
+			)		
+	 </insert>
+
+
+	 <update id="updateCode"   parameterType="java.util.Map">
+	 	
+	 	/* code.updateCode */
+	 	
+		UPDATE TB_CODE 
+		SET	   nm      = #{nm}
+	         , dsc     = #{dsc}
+	         , use_yn  = #{use_yn} 
+	         , val1	   = #{val1}
+	         , sort_seq	 = #{sort_seq}
+		WHERE  repr_cd = #{repr_cd} 		
+	    AND    cd      = #{cd}		 
+			   		
+	    
+	 </update>
+
+
+	 <select id="codeDetail" parameterType="java.util.Map" resultMap="lowerMap">
+	 	
+	 	/* code.codeDetail */
+	 	
+		SELECT *
+		FROM TB_CODE 
+		WHERE  repr_cd = #{repr_cd} 		
+	    AND    cd      = #{cd}		 
+	    
+	 </select>
+
+
+
+
+
+	<select id="codeReprCount" parameterType="java.util.Map" resultType="int">
+	
+		/* code.codeReprCount */
+		
+		SELECT  count(*) 
+		FROM  TB_REPRCODE A
+		WHERE use_yn = 'Y'
+		 
+	</select>
+ 
+	<select id="codeReprList" parameterType="java.util.Map" resultMap="lowerMap">
+	
+		/* code.codeReprList */
+		
+		SELECT  * 
+		FROM  TB_REPRCODE A
+		<!-- WHERE use_yn = 'Y' -->
+		 
+		ORDER BY repr_cd
+		
+	</select>
+
+ 
+
+	 <insert id="insertRepr"   parameterType="java.util.Map">
+	 	
+	 	/* code.insertRepr */
+	 	
+		INSERT INTO TB_REPRCODE 
+			(
+			   repr_cd		
+	         , repr_nm
+	         , dsc
+	         , use_yn
+				 
+			) VALUES (
+			   #{repr_cd}		
+	         , #{repr_nm}
+	         , #{dsc}
+	         , #{use_yn}
+
+			)		
+	 </insert>
+
+
+	 <update id="updateRepr"   parameterType="java.util.Map">
+	 	
+	 	/* code.updateRepr */
+	 	
+		UPDATE TB_REPRCODE 
+		SET	   repr_nm = #{repr_nm}
+	         , dsc     = #{dsc}
+	         , use_yn  = #{use_yn} 
+		WHERE  repr_cd = #{repr_cd} 		
+			   		
+	    
+	 </update>
+
+
+	 <select id="reprDetail" parameterType="java.util.Map" resultMap="lowerMap">
+	 	
+	 	/* code.reprDetail */
+	 	
+		SELECT *
+		FROM TB_REPRCODE 
+		WHERE  repr_cd = #{repr_cd} 		
+	    
+	 </select>
+
+
+
+	 <select id="codeNameList" parameterType="java.util.Map" resultMap="lowerMap">
+	 	
+	 	/* code.codeNameList */
+	 	
+		SELECT *
+		FROM TB_CODE 
+		WHERE  repr_cd = #{repr_cd} 		
+	    AND    nm      = #{nm}		 
+	    
+	 </select>
+
+
+</mapper>

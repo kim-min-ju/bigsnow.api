@@ -1,0 +1,581 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="user">
+
+	<!-- resultMap 소문자 변경 -->
+	<resultMap type="org.apache.commons.collections4.map.CaseInsensitiveMap" id="lowerMap"/>
+ 
+ 
+	<select id="test" parameterType="java.util.Map" resultMap="lowerMap">
+	
+		/* user.login */
+		
+		select   * 
+		from tb_user A
+		limit 0, 1
+		
+	</select>
+	  
+ 
+ 	<select id="login" parameterType="java.util.Map" resultMap="lowerMap">
+	
+		/* user.login */
+		
+		select   * 
+		from tb_user A
+		where user_id = #{user_id}
+		and   use_yn  = 'Y'
+		and   ifnull(out_dt, '' ) = ''
+		and   user_passwd = password(#{user_passwd})
+		
+	</select>
+ 
+	<select id="userIdDupCheck" parameterType="java.util.Map" resultMap="lowerMap">
+	
+		/* user.userIdDupCheck */
+		
+		select   * 
+		from tb_user A
+		where user_id = #{user_id}
+		and   use_yn  = 'Y'
+		and   ifnull(out_dt, '' ) = ''
+
+	</select>
+
+
+	<select id="userIdDetail" parameterType="java.util.Map" resultMap="lowerMap">
+	
+		/* user.userIdDetail */
+		
+		select    A.* 
+		from tb_user A
+		where user_id = #{user_id}
+		and   use_yn  = 'Y'
+   
+		
+	</select>
+
+
+	<select id="userDetail" parameterType="java.util.Map" resultMap="lowerMap">
+	
+		/* user.userDetail */
+		
+		select    A.* 
+		        , C.CUST_NM 
+		        , ( select user_nm from tb_user R where  A.reg_user_no = R.user_NO ) as reg_user_nm
+		from tb_user A left outer join tb_cust C ON ( C.CUST_NO = A.CUST_NO )
+		where user_no = #{user_no}
+		and   A.use_yn  = 'Y'
+   
+		
+	</select>
+
+
+	<select id="userNameHpList" parameterType="java.util.Map" resultMap="lowerMap">
+	
+		/* user.userNameHpList */
+		
+		select    A.* 
+		        , C.CUST_NM 
+		        , ( select user_nm from tb_user R where  A.reg_user_no = R.user_NO ) as reg_user_nm
+		from tb_user A left outer join tb_cust C ON ( C.CUST_NO = A.CUST_NO )
+		where A.user_nm                   = replace(#{user_nm}, ' ','')
+		and   replace(A.hp_no, '-', '')   = replace(replace(#{hp_no}, ' ',''), '-', '')
+		and   A.use_yn  = 'Y'
+   
+		
+	</select>
+
+	 
+     
+     <sql id="userWhere">
+		 
+		where U.USE_YN = 'Y'
+		
+		<if test='user_nm != null and user_nm != ""'> AND U.user_nm like concat('%', #{user_nm} , '%' ) </if>		
+		<if test='hp_no != null and hp_no != ""'> AND U.hp_no like concat('%', #{hp_no} , '%' ) </if>
+		<if test='user_gbn_cd != null and user_gbn_cd != ""'> AND U.USER_GRP_CD = #{user_gbn_cd}  </if>
+		 
+		 <if test='user_id != null and user_id != ""'> AND U.user_id like concat('%', #{user_id} , '%' ) </if>
+		 
+		 <if test='cust_no != null and cust_no != ""'> AND U.CUST_NO = #{cust_no}  </if>
+		 
+		  <if test='sbj_grp_cd != null and sbj_grp_cd != ""'> AND U.sbj_grp_cd = #{sbj_grp_cd}  </if>
+		 
+		 
+		 <if test='sbj_grp_nm != null and sbj_grp_nm != ""'> 
+		 
+		      AND U.sbj_grp_cd in 
+		                           (
+		                               SELECT CD 
+		                               from TB_CODE SC 
+		                               where REPR_CD ='SGC' 
+		                               and SC.nm     like   concat('%', #{sbj_grp_nm} , '%' )
+		                           )  
+		 </if>
+		 
+	</sql>
+	      
+
+ 
+ 	<select id="teacherPopList" parameterType="java.util.Map" resultMap="lowerMap">
+	
+		/* user.teacherPopList */
+		
+			select    U.user_no
+			        , U.user_nm
+			        , U.user_id
+			        , U.hp_no
+			        , U.addr
+			        , U.addr_detail
+			        , U.email
+			        , U.gender_gbn
+	                , ( SELECT NM from TB_CODE SC where REPR_CD ='SGC' and SC.cd = U.SBJ_GRP_CD ) as SBJ_GRP_NM
+			from tb_user U
+		
+			<include refid="userWhere" />
+
+		    ORDER BY user_nm
+		    
+		    <if test=' start_row != null '> limit  #{start_row}, #{end_row}  </if>	
+	
+		
+	</select>
+
+
+	<select id="userList" parameterType="java.util.Map" resultMap="lowerMap">
+	
+		/* user.userList */
+		
+			select     U.USER_NO
+		             , U.USER_NM  
+		             , U.USER_ID
+			         , C.CUST_NM
+		             , U.GENDER_GBN
+		             , U.BRITHDAY
+		             , U.HP_NO
+		             , U.ADDR
+		             , U.ADDR_DETAIL
+		             , U.REG_DT
+			from tb_user U  left outer join tb_cust C on (U.CUST_NO = C.CUST_NO )
+		
+		   <include refid="userWhere" />
+
+		    ORDER BY U.user_no desc
+		
+		<if test=' start_row != null '> limit  #{start_row}, #{end_row}  </if>	
+		
+	</select>
+	 
+
+	<select id="userCount" parameterType="java.util.Map" resultType="int">
+	
+		/* user.userCount */
+		
+		    SELECT  count(*) 
+			from tb_user U  left outer join tb_cust C on (U.CUST_NO = C.CUST_NO )
+		 
+		   <include refid="userWhere" /> 
+		
+	</select>    
+
+
+	<insert id="insertUser" parameterType="java.util.Map">
+	 
+		/* user.insertUser */
+		
+                                                                                                                                
+			                                                                                                                                
+			insert into tb_user
+			(
+			   	  CUST_NO
+				, USER_ID
+				, USER_NM
+				, PASSBOOK_NO
+				, INTRO
+				, EMAIL
+				, ADDR_DETAIL
+				, ADDR
+				, POST_NO
+				, FAX_NO
+				, TEL_NO
+				, HP_NO
+				, BRITHDAY
+				, GENDER_GBN
+				, USER_PASSWD
+				, USER_GRP_CD
+				, USE_YN
+				
+				
+				, SBJ_GRP_CD
+				
+				<if test='token_user_no != null and token_user_no != ""'> , REG_USER_NO   </if>
+				
+				, REG_DT
+			) values (
+					
+			  	  #{cust_no}
+				, #{user_id}
+				, #{user_nm}
+				, #{passbook_no}
+				, #{intro}
+				, #{email}
+				, #{addr_detail}
+				, #{addr}
+				, #{post_no}
+				, #{fax_no}
+				, #{tel_no}
+				, #{hp_no}
+				, substr(#{brithday}, 1, 8)
+				, #{gender_gbn}
+				, password ( #{user_passwd} )
+				, #{user_grp_cd}
+				, 'Y'
+				
+				, #{sbj_grp_cd}
+				
+				<if test='token_user_no != null and token_user_no != ""'>, #{token_user_no}    </if>
+ 
+				, date_format(now(), '%Y%m%d%H%i%s')
+							
+			);
+				
+		    <selectKey keyProperty="user_no" resultType="int">
+		        SELECT LAST_INSERT_ID()
+		    </selectKey>						
+								
+		
+	</insert>   
+
+
+
+	<update id="updateUser" parameterType="java.util.Map">
+	 
+		/* user.updateUser */
+			                                                                                                                                
+			update tb_user
+				set   CUST_NO            = #{cust_no}                                 
+					, USER_ID            = #{user_id}                                 
+					, USER_NM            = #{user_nm}                                 
+					, PASSBOOK_NO        = #{passbook_no}                             
+					, INTRO              = #{intro}                                   
+					, EMAIL              = #{email}                                   
+					, ADDR_DETAIL        = #{addr_detail}                             
+					, ADDR               = #{addr}                                    
+					, POST_NO            = #{post_no}                                 
+					, FAX_NO             = #{fax_no}                                  
+					, TEL_NO             = #{tel_no}                                  
+					, HP_NO              = #{hp_no}                                   
+					, BRITHDAY           = substr(#{brithday}, 1, 8)                                
+					, GENDER_GBN         = #{gender_gbn}     
+					
+					, SBJ_GRP_CD         = #{sbj_grp_cd}
+					
+					
+					<if test='user_passwd != null and user_passwd != ""'>, #{token_user_no}    </if>
+				 	<if test='token_user_no != null and token_user_no != ""'>  , UPD_USER_NO        = #{token_user_no}    </if>  
+					                                                                     
+					                          
+					, UPD_DT             = date_format(now(), '%Y%m%d%H%i%s')         
+	    where         USER_NO            = #{user_no}
+		
+	</update>   
+
+ 
+	<sql id="loginHistWhere">
+		 
+		where 1 = 1
+		
+		<if test='user_nm != null and user_nm != ""'> AND U.USER_NM like concat('%', #{user_nm} , '%' ) </if>		
+		<if test='fr_dt   != null and fr_dt   != ""'> AND H.REG_DT <![CDATA[ >=  ]]> concat(#{fr_dt}, '000000'  ) </if>
+		<if test='to_dt   != null and to_dt   != ""'> AND H.REG_DT <![CDATA[ <=  ]]> concat(#{to_dt}, '235959'  ) </if>
+		
+	</sql>
+
+
+
+
+	<insert id="insertUserHist" parameterType="java.util.Map">
+	 
+		/* user.insertUserHist */
+			                                                                                                                                
+			insert into TB_LOGINHIST
+			(
+			    USER_NO
+			  , IP_ADDR								
+			  , REG_USER_NO								
+			  , REG_DT								
+			  , LOGIN_SUC_YN								
+								
+			) values (
+					
+			  	  #{user_no}
+				, #{ip_addr}
+				, #{user_no}
+				, date_format(now(), '%Y%m%d%H%i%s')
+				, 'Y'
+			) 	
+		
+	</insert>   
+
+
+
+
+
+	<select id="loginHistCount" parameterType="java.util.Map" resultType="int">
+	
+		/* user.loginHistCount */
+		
+		SELECT  count(*) 
+		from tb_loginhist H left outer join tb_user U on ( H.USER_NO = U.USER_NO )
+		                    left outer join tb_cust C on ( U.CUST_NO = C.CUST_NO )
+		 
+		<include refid="loginHistWhere" />
+		
+	</select>
+ 
+	<select id="loginHistList" parameterType="java.util.Map" resultMap="lowerMap">
+	
+		/* user.loginHistList */
+		
+		
+		select H.*
+		      ,U.USER_NM
+		      ,U.USER_ID
+		      ,C.CUST_NM
+		from tb_loginhist H left outer join tb_user U on ( H.USER_NO = U.USER_NO )
+		                    left outer join tb_cust C on ( U.CUST_NO = C.CUST_NO )
+		
+		<include refid="loginHistWhere" />
+		
+		ORDER BY H.HIST_NO asc
+		
+		<if test=' start_row != null '> limit  #{start_row}, #{end_row}  </if>	
+		
+	</select>
+
+
+
+	<update id="updateUserUseYn" parameterType="java.util.Map">
+	 
+		/* user.updateUserUseYn */
+		
+		UPDATE tb_user
+		SET		use_yn = 'N'
+		WHERE  user_no = #{user_no}
+		
+	</update>   
+
+
+	<select id="authUserTargetList" parameterType="java.util.Map" resultMap="lowerMap">
+	
+		/* user.authUserTargetList */
+		
+			select     U.USER_NO
+		             , U.USER_ID 
+		             , U.USER_NM  
+			         , C.CUST_NM
+		             , U.REG_DT
+		             , D.user_grp_nm
+			from tb_user U  left outer join tb_cust C on (U.CUST_NO = C.CUST_NO )
+			                left outer join (
+			                                   select cd, nm as user_grp_nm from tb_code SC where SC.use_yn ='Y' and repr_cd ='UGP'  
+			                                ) D on ( U.user_grp_cd = D.cd )
+		    where U.USE_YN = 'Y'
+		    and U.USER_GRP_CD in ('UGP002', 'UGP003', 'UGP004', 'UGP005', 'UGP006' )
+		   
+		    ORDER BY  D.user_grp_nm, C.CUST_NM, U.USER_NM  
+			
+	</select>
+	 
+	 
+	<select id="authUserMenuList" parameterType="java.util.Map" resultMap="lowerMap">
+         
+         /* user.authUserMenuList */
+		
+				SELECT  M.MENU_ID
+				      , M.MENU_NM
+				      , M.MENU_DEPTH
+				      , M.UP_MENU_ID
+				      , M.MENU_URL
+				      , M.SORT_SEQ
+				      , A.MENU_AUTH_NO
+				      , A.USER_GRP_CD
+				      , A.USER_NO
+				      
+				      , A.ACC_AUTH_YN
+				      , A.REG_AUTH_YN
+				      , A.UPD_AUTH_YN
+				      , A.MGR_AUTH_YN
+				      , A.DN_AUTH_YN
+				      
+				FROM tb_menu M LEFT OUTER JOIN tb_menuauth A ON ( A.MENU_ID = M.MENU_ID AND A.USER_NO = #{user_no} )
+				AND  M.USE_YN = 'Y'
+				ORDER BY M.MENU_DEPTH, M.SORT_SEQ
+					 
+	 </select>
+
+
+	<select id="authGrpMenuList" parameterType="java.util.Map" resultMap="lowerMap">
+       
+        /* user.authGrpMenuList */
+ 
+				SELECT  M.MENU_ID
+				      , M.MENU_NM
+				      , M.MENU_DEPTH
+				      , M.UP_MENU_ID
+				      , M.MENU_URL
+				      , M.SORT_SEQ
+				      , A.MENU_AUTH_NO
+				      , A.USER_GRP_CD
+				      , A.USER_NO
+				      
+				      , A.ACC_AUTH_YN
+				      , A.REG_AUTH_YN
+				      , A.UPD_AUTH_YN
+				      , A.MGR_AUTH_YN
+				      , A.DN_AUTH_YN
+				      
+				FROM tb_menu M LEFT OUTER JOIN tb_menuauth A ON ( A.MENU_ID = M.MENU_ID AND A.USER_GRP_CD = #{user_grp_cd} )
+				AND  M.USE_YN = 'Y'
+				ORDER BY M.MENU_DEPTH, M.SORT_SEQ
+					 
+	 </select>
+
+
+	<delete id="deleteMenuUserAuth" parameterType="java.util.Map">
+	 
+		/* user.deleteMenuUserAuth */
+			                                                                                                                                
+		 delete  from tb_menuauth
+	     where         USER_NO            = #{user_no}
+		
+	</delete>   
+
+
+	<delete id="deleteMenuGrpAuth" parameterType="java.util.Map">
+	 
+		/* user.deleteMenuGrpAuth */
+			                                                                                                                                
+		 delete  from tb_menuauth
+	     where  USER_GRP_CD  = #{user_grp_cd}
+		
+	</delete>   
+
+
+	<insert id="insertMenuUserAuth" parameterType="java.util.Map">
+	 
+		/* user.insertMenuUserAuth */
+		
+                                                                                                                                
+			                                                                                                                                
+			insert into tb_menuauth
+			(
+			   	  
+				  USER_NO
+				, MENU_ID
+				, ACC_AUTH_YN
+				, REG_AUTH_YN
+				, UPD_AUTH_YN
+				, MGR_AUTH_YN
+				, DN_AUTH_YN
+				<if test=' reg_user_no != null '> , REG_USER_NO </if>	
+				
+				, REG_DT
+			) values (
+					
+			  	  #{user_no}
+				, #{menu_id}
+				, #{acc_auth_yn}
+				, #{reg_auth_yn}
+				, #{upd_auth_yn}
+				, #{mgr_auth_yn}
+				, #{dn_auth_yn}
+				
+				<if test=' reg_user_no != null '> , #{reg_user_no} </if>
+				
+				, date_format(now(), '%Y%m%d%H%i%s')
+							
+			)
+								
+		
+	</insert>   
+
+
+	<insert id="insertMenuGrpAuth" parameterType="java.util.Map">
+	 
+		/* user.insertMenuGrpAuth */
+		
+			insert into tb_menuauth
+			(
+			   	  
+				  USER_GRP_CD
+				, MENU_ID
+				, ACC_AUTH_YN
+				, REG_AUTH_YN
+				, UPD_AUTH_YN
+				, MGR_AUTH_YN
+				, DN_AUTH_YN
+				<if test=' reg_user_no != null '> , REG_USER_NO </if>	
+				
+				, REG_DT
+			) values (
+					
+			  	  #{user_grp_cd}
+				, #{menu_id}
+				, #{acc_auth_yn}
+				, #{reg_auth_yn}
+				, #{upd_auth_yn}
+				, #{mgr_auth_yn}
+				, #{dn_auth_yn}
+				
+				<if test=' reg_user_no != null '> , #{reg_user_no} </if>
+				
+				, date_format(now(), '%Y%m%d%H%i%s')
+							
+			)
+								
+		
+	</insert>   
+
+
+	<select id="userGrpMenuList" parameterType="java.util.Map" resultMap="lowerMap">
+       
+        /* user.userGrpMenuList */
+ 
+			select  M.*
+			      , C.ACC_AUTH_YN 
+			      , C.REG_AUTH_YN
+			      , C.UPD_AUTH_YN
+			      , C.MGR_AUTH_YN
+			      , C.DN_AUTH_YN
+			from tb_menu M, 
+			     (
+			        select   MENU_ID
+			               , MAX(ACC_AUTH_YN) as ACC_AUTH_YN 
+			               , MAX(REG_AUTH_YN) as REG_AUTH_YN
+			               , MAX(UPD_AUTH_YN) as UPD_AUTH_YN
+			               , MAX(MGR_AUTH_YN) as MGR_AUTH_YN
+			               , MAX(DN_AUTH_YN ) as DN_AUTH_YN
+			        from (
+			                select *
+			                from tb_menuauth
+			                where USER_NO = #{user_no}
+			                
+			                union all 
+			                
+			                select *
+			                from tb_menuauth
+			                where USER_GRP_CD in ( select user_grp_cd from tb_user where USER_NO = #{user_no} )
+			              ) A
+			        group by  MENU_ID     
+			    ) C
+			where M.MENU_ID = C.MENU_ID    
+			AND   M.USE_YN  = 'Y'
+			ORDER BY M.MENU_DEPTH, M.SORT_SEQ
+ 
+  
+					 
+	 </select>
+
+</mapper>

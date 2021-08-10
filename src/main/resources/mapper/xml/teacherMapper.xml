@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="teacher">
+
+	<!-- resultMap 소문자 변경 -->
+	<resultMap type="org.apache.commons.collections4.map.CaseInsensitiveMap" id="lowerMap"/>
+
+	<sql id="teacherWhere">
+		 
+		where U.user_grp_cd ='UGP002'
+		and   U.USE_YN = 'Y'		
+		
+		<if test='cust_nm != null and cust_nm != ""'> AND C.cust_nm like concat('%', #{cust_nm} , '%' ) </if>
+		<if test='cust_no != null and cust_no != ""'> AND C.cust_no = #{cust_no} </if>
+		<if test='user_nm != null and user_nm != ""'> AND U.user_nm like concat('%', #{user_nm} , '%' ) </if>
+		<if test='hp_no   != null and hp_no   != ""'> AND U.hp_no like   concat('%', #{hp_no} , '%' ) </if>
+		
+	</sql>
+	
+	<select id="teacherList" parameterType="java.util.Map" resultMap="lowerMap">
+	
+		/* teacher.teacherList */
+
+			select  U.*
+			      , C.cust_nm 
+			      , case when ( select count('X') 
+			                    from TB_LECTURE L 
+			                    where L.TEACHER_NO = U.USER_NO 
+			                    and L.USE_YN = 'Y'  
+			                    and   DATE_FORMAT(now()	, '%Y%m%d')  between L.LEC_FR_DT and L.LEC_TO_DT
+			                  ) <![CDATA[ >  ]]> 0 then '진행중' end as PROG_NM  
+			from tb_user U left outer join  tb_cust  C on ( U.cust_no = C.CUST_NO )
+		
+		    <include refid="teacherWhere" />
+
+			order by U.USER_NO desc
+		
+		    <if test=' start_row != null '> limit  #{start_row}, #{end_row}  </if>	
+		
+	</select>
+	 
+
+	<select id="teacherCount" parameterType="java.util.Map" resultType="int">
+	
+		/* teacher.teacherCount */
+		
+		    SELECT  count(*) 
+			from tb_user U left outer join  tb_cust  C on ( U.cust_no = C.CUST_NO )
+		 
+		    <include refid="teacherWhere" /> 
+		
+	</select>
+ 
+
+
+    <select id="tearcherDetail"  parameterType="java.lang.String" resultMap="lowerMap">
+      
+         /* teacher.tearcherDetail */
+
+			select  U.*
+			      , ( SELECT NM from TB_CODE SC where REPR_CD ='SGC' and SC.cd = U.SBJ_GRP_CD ) as SBJ_GRP_NM
+			      , C.cust_nm 
+			      , case when ( select count('X') 
+			                    from TB_LECTURE L 
+			                    where L.TEACHER_NO = U.USER_NO 
+			                    and L.USE_YN = 'Y'  
+			                    and   DATE_FORMAT(now()	, '%Y%m%d')  between L.LEC_FR_DT and L.LEC_TO_DT
+			                  ) <![CDATA[ >  ]]>  0 then '진행중' end as PROG_NM
+			      ,  ( select phy_file_nm  from tb_file SF where SF.ref_nm = 'TB_USER' and SF.ref_pk = #{user_no} order by file_no desc limit 0, 1 ) as file_nm              
+			from tb_user U left outer join  tb_cust  C on ( U.cust_no = C.CUST_NO )
+		    where  user_no = #{user_no}
+ 
+    </select> 
+
+
+	<update id="updateteacherUseYn" parameterType="java.util.Map">
+	 
+		/* teacher.updateteacherUseYn */
+		
+		UPDATE tb_user
+		SET		use_yn = 'N'
+		 where  user_no = #{user_no}
+		
+	</update>    
+
+
+
+    <select id="tearcherLessionList"  parameterType="java.lang.String" resultMap="lowerMap">
+      
+         /* teacher.tearcherLessionList */
+
+			select   L.LES_NO
+			       , S.SBJ_NM as LEC_NM
+			       , L.LES_DT
+			       , L.LES_FR_TM
+			       , L.LES_TO_TM
+			from TB_LESSON L left outer join TB_LECTURE R on ( L.LEC_NO = R.LEC_NO AND R.USE_YN = 'Y' )
+			                 left outer join TB_SUBJECT S on ( R.SBJ_NO = S.SBJ_NO )
+			where L.TEACHER_NO = #{user_no}
+			order by L.LES_DT desc, L.LES_FR_TM desc
+ 
+    </select> 
+
+
+ 
+
+
+</mapper>

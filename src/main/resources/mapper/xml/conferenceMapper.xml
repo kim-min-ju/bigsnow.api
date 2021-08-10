@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="conference">
+
+	<!-- resultMap 소문자 변경 -->
+	<resultMap type="org.apache.commons.collections4.map.CaseInsensitiveMap" id="lowerMap"/>
+
+	<select id="detailFileInfo" parameterType="java.util.Map" resultMap="lowerMap">
+		/* file.detailFileInfo */
+		SELECT
+			FILE_NO ,
+			LGC_FILE_NM ,
+			PHY_FILE_NM ,
+			FILE_SIZE ,
+			REL_KEY ,
+			REL_TBL ,
+			FILE_GBN ,
+			FILE_EXT ,
+			REG_DT ,
+			REG_MBR_NO ,
+			VIEW_CNT ,
+			IMPT_YN
+		FROM
+			TB_FILE
+		where FILE_NO = #{file_no}
+	</select>
+	
+	<select id="fileList" parameterType="java.util.Map" resultMap="lowerMap">
+		/* file.fileList */
+		SELECT
+			FILE_NO ,
+			LGC_FILE_NM ,
+			PHY_FILE_NM ,
+			FILE_SIZE ,
+			REL_KEY ,
+			REL_TBL ,
+			FILE_GBN ,
+			FILE_EXT ,
+			REG_DT ,
+			REG_MBR_NO ,
+			VIEW_CNT ,
+			IMPT_YN 
+		FROM
+			TB_FILE
+		<if test='lgc_file_nm != null and lgc_file_nm != ""'>
+		WHERE LGC_FILE_NM like #{lgc_file_nm}
+		</if>
+		ORDER BY FILE_NO DESC
+		LIMIT
+			#{startPage}, #{recordsPerPage}
+<!-- 		where REL_TBL = #{rel_tbl}
+		and REL_KEY = #{rel_key} -->
+		
+	</select>
+	
+	<select id="fileListCount" parameterType="java.util.Map" resultType="int">
+		/* file.fileListCount */
+		SELECT
+			COUNT(*) CNT
+		FROM
+			TB_FILE
+		<if test='lgc_file_nm != null and lgc_file_nm != ""'>
+		WHERE LGC_FILE_NM like #{lgc_file_nm}
+		</if>
+	</select>
+
+	<update id="updateFile" parameterType="java.util.Map"> 
+		/* file.updateFile */
+		UPDATE
+			TB_FILE
+		SET
+			LGC_FILE_NM = #{lgc_file_nm},
+			PHY_FILE_NM = #{phy_file_nm},
+			FILE_SIZE = #{file_size},
+			FILE_EXT = #{file_ext},
+			VIEW_CNT = #{view_cnt},
+			IMPT_YN = #{impt_yn}
+		WHERE
+			FILE_NO = #{file_no}
+	</update>
+	
+	<delete id="deleteFile" parameterType="java.util.Map"> 
+		/* file.deleteFile */
+		DELETE
+		FROM TB_FILE
+		WHERE
+			FILE_NO = #{file_no}
+	</delete>
+	
+	<insert id="insertFile" parameterType="java.util.Map"> 
+		/* file.insertFile */
+		INSERT
+			INTO
+				TB_FILE (
+				LGC_FILE_NM,
+				PHY_FILE_NM,
+				FILE_SIZE,
+				REL_KEY,
+				REL_TBL,
+				FILE_GBN,
+				FILE_EXT,
+				REG_DT,
+				REG_MBR_NO,
+				VIEW_CNT,
+				IMPT_YN)
+			VALUES(
+				#{lgc_file_nm},
+				#{phy_file_nm},
+				#{file_size},
+				#{rel_key},
+				#{rel_tbl},
+				#{file_gbn},
+				#{file_ext},
+				date_format(now(), '%Y%m%d%H%i%s'),
+				#{reg_mbr_no},
+				#{view_cnt},
+				#{impt_yn})
+	</insert>
+
+</mapper>
