@@ -15,9 +15,9 @@
  
   	
 	<groupId>com.edmp.commonapi</groupId>
-	<artifactId>snow-api</artifactId>
+	<artifactId>bigsnow-api</artifactId>
 	<version>1.0.0-SNAPSHOT</version>
-	<name>snow-api</name>
+	<name>bigsnow-api</name>
 	<description>big Snow </description>
 	
 	<packaging>war</packaging>
