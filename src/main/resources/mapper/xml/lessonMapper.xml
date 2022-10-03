@@ -836,8 +836,10 @@
 			      , N.LES_FR_TM
 			      , N.LES_TO_TM
 			      , N.TEACHER_NO
-			      , concat(A.LEC_APP_NO, '-', A.STD_USER_NO, '-' , A.LEC_NO, '-' , N.LES_NO ) as VIDEO_URL
-			      , ( SELECT phy_file_nm from tb_file SF where SF.REF_PK = 'TB_LECTURE' AND SF.REF_PK = L.LEC_NO ORDER BY SF.FILE_NO DESC LIMIT 0, 1) AS MAIN_IMG
+			      , S.SBJ_GRP_CD
+			      , concat(A.LEC_APP_NO, '-', A.STD_USER_NO, '-' , A.LEC_NO, '-' , N.LES_NO ) as VIDEO_URL1
+			      , ( select VIDEO_URL from tb_videodata where LES_NO = N.LES_NO) as VIDEO_URL2
+			      , ( select phy_file_nm from tb_file SF where SF.REF_PK = 'TB_LECTURE' AND SF.REF_PK = L.LEC_NO ORDER BY SF.FILE_NO DESC LIMIT 0, 1) AS MAIN_IMG
 			from  tb_lectureapp A inner join tb_lecture L on ( A.LEC_NO = L.LEC_NO )
 			                      inner join TB_LESSON N on ( A.LEC_NO = N.LEC_NO )
 			                      inner join tb_user    U on ( N.TEACHER_NO = U.USER_NO )
@@ -938,24 +940,36 @@
 			, LS.LES_DT
 			, LS.LES_FR_TM
 			, LS.LES_TO_TM
+			, S.SBJ_GRP_CD
 			, (select PHY_FILE_NM from tb_file where REF_NM='TB_SUBJECT' and REF_PK = S.SBJ_NO limit 1) as PHY_FILE_NM
 			from tb_lectureapp A left outer join tb_user    U on ( A.STD_USER_NO = U.USER_NO )
 			left outer join tb_lecture L on ( A.LEC_NO      = L.LEC_NO )
 		left outer join tb_subject S on ( L.SBJ_NO      = S.SBJ_NO )
-		left outer join tb_lesson  LS on ( A.LEC_NO     = LS.LEC_NO )
+		inner join tb_lesson  LS on ( A.LEC_NO     = LS.LEC_NO )
 		where A.STD_USER_NO = #{std_user_no}
+		and LS.LES_DT &gt;= date_format(now(), '%Y%m%d')
 		order by DATEDIFF(LS.LES_DT, date_format(now(), '%Y%m%d')), LS.LES_FR_TM
 </select>
 <select id="myAttendList" parameterType="java.util.Map" resultMap="lowerMap">
 	/* lesson.myAttendList */
-	SELECT A.STD_USER_NO, date_format(B.REG_DT, '%Y%m%d') LES_DT, B.ATT_YN
+	SELECT A.STD_USER_NO, A.LES_DT, B.ATT_YN
 			,D.SBJ_NM AS LEC_NM ,C.LEC_FR_TM ,C.LEC_TO_TM
-	FROM TB_LECTUREAPP A INNER JOIN TB_ATTENDANCE B ON A.LEC_APP_NO = B.LEC_APP_NO
-	INNER JOIN TB_LECTURE C ON A.LEC_NO = C.LEC_NO
-	INNER JOIN TB_SUBJECT D ON C.SBJ_NO = D.SBJ_NO
-	WHERE A.STD_USER_NO = #{std_user_no}
-	AND date_format(B.REG_DT, '%Y%m%d') &lt;=  date_format(now(), '%Y%m%d')
-	ORDER BY date_format(B.REG_DT, '%Y%m%d'), C.LEC_FR_TM
+	FROM (
+		SELECT T.*, DENSE_RANK() OVER (ORDER BY TMP_DT) DT_RANK
+		FROM (
+			SELECT LEC_APP_NO, A.LEC_NO, A.STD_USER_NO, DATE_FORMAT(N.LES_DT, '%Y%m%d') AS LES_DT, N.LES_NO,
+					CASE WHEN DATE_FORMAT(N.LES_DT, '%Y%m%d') &lt;= DATE_FORMAT(NOW(), '%Y%m%d') THEN DATE_FORMAT(NOW(), '%Y%m%d')
+					ELSE N.LES_DT
+					END TMP_DT
+			FROM TB_LECTUREAPP A INNER JOIN TB_LESSON N ON  A.LEC_NO = N.LEC_NO
+			WHERE A.STD_USER_NO = #{std_user_no}
+			ORDER BY N.LES_DT
+		) T
+	) A  LEFT OUTER JOIN TB_ATTENDANCE B ON A.LEC_APP_NO = B.LEC_APP_NO	AND  A.LES_NO = B.LES_NO
+		INNER JOIN TB_LECTURE C ON A.LEC_NO = C.LEC_NO
+		INNER JOIN TB_SUBJECT D ON C.SBJ_NO = D.SBJ_NO
+	WHERE A.DT_RANK &lt;= 2
+	ORDER BY A.LES_DT DESC, C.LEC_FR_TM
 </select>
 
 
